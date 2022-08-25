@@ -84,17 +84,9 @@ nocache() {
   fi
 }
 
-tags() {
-  if [ "$BUILDER_TYPE" != "local" ]; then
-    TAG=(${1//\// })
-    echo "--tag ${TAG[2]}"
-  fi
-  echo "--tag $1"
-}
-
 args() {
   DOCKER_ARGS=(
-    $(tags $1)
+    --tag "$1"
     --build-arg "OSVENDOR=$OSVENDOR"
     --build-arg "OSVERSION=$OSVERSION"
     --build-arg "GOVERSION=$GOVERSION"
