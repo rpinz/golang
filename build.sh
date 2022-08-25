@@ -105,9 +105,11 @@ push() {
 }
 
 pull() {
-  echo " 🐳 Pulling $1"
   if [ "$(docker images | grep -e ${OSVENDOR}.*${OSVERSION})" = "" ]; then
+    echo " 🐳 Pulling $1"
     docker pull "$1"
+  else
+    echo " 🐳 Found images: $1"
   fi
 }
 
@@ -147,12 +149,14 @@ builder() {
       done
     ;;
     "build")
+      pull "${OSVENDOR}:${OSVERSION}"
       for REGISTRY in ${REGISTRIES[@]}; do
         build "${REGISTRY}/${GOLANG}:${GOVERSION}-${OSVERSION}" \
           && push "${REGISTRY}/${GOLANG}:${GOVERSION}-${OSVERSION}"
       done
     ;;
     "local")
+      pull "${OSVENDOR}:${OSVERSION}"
       build "${GOLANG}:${GOVERSION}-${OSVERSION}"
     ;;
     *)
@@ -163,7 +167,6 @@ builder() {
 main() {
   for OSVENDOR in ${OSVENDORS[@]}; do
     for OSVERSION in ${OSVERSIONS[@]}; do
-      pull "${OSVENDOR}:${OSVERSION}"
       for GOVERSION in ${GOVERSIONS[@]}; do
         builder "$BUILDER_TYPE"
       done
