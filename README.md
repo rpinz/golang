@@ -2,9 +2,13 @@
 
 Build script that generates Ubuntu golang build containers for both local and remote registries with multi-arch build options.  A single Dockerfile based on the [docker-library](https://github.com/docker-library) repositories: [buildpack-deps](https://github.com/docker-library/buildpack-deps), and [golang](https://github.com/docker-library/golang) is used with docker build args.
 
- - [rpinz/golang:1.19-bionic](https://hub.docker.com/r/rpinz/golang)
- - [rpinz/golang:1.19-focal](https://hub.docker.com/r/rpinz/golang)
- - [rpinz/golang:1.19-jammy](https://hub.docker.com/r/rpinz/golang)
+ - [docker.io/rpinz/golang:1.19-bionic](https://hub.docker.com/r/rpinz/golang)
+ - [docker.io/rpinz/golang:1.19-focal](https://hub.docker.com/r/rpinz/golang)
+ - [docker.io/rpinz/golang:1.19-jammy](https://hub.docker.com/r/rpinz/golang)
+
+ - [ghcr.io/rpinz/golang:1.19-bionic](https://github.com/rpinz/golang)
+ - [ghcr.io/rpinz/golang:1.19-focal](https://github.com/rpinz/golang)
+ - [ghcr.io/rpinz/golang:1.19-jammy](https://github.com/rpinz/golang)
 
 # PLEASE NOTE: To reduce attack surface in a production environment, these containers should only be used during multi-stage builds as the build container, with run-time containers generated from official builds.
 
