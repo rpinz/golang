@@ -108,11 +108,9 @@ push() {
 }
 
 pull() {
-  if [ "$(docker images | grep -e ${OSVENDOR}.*${OSVERSION})" = "" ]; then
+  if [ "$COMMAND" != "buildx" -a "$(docker images | grep -e ${OSVENDOR}.*${OSVERSION})" = "" ]; then
     echo " 🐳 Pulling $1"
     docker pull "$1"
-  else
-    echo " 🐳 Found image: $1"
   fi
 }
 
@@ -161,7 +159,7 @@ buildx() {
 
 builder() {
   case "$1" in
-    "buildx"|"create")
+    "buildx")
       for REGISTRY in ${REGISTRIES[@]}; do
         buildx "${REGISTRY}/${GOLANG}:${GOVERSION}-${OSVERSION}"
       done
@@ -186,21 +184,24 @@ main() {
 
   case "$COMMAND" in
     "create")
-      buildx_create "$GOLANG" && exit 0 || exit 1
+      buildx_create "$GOLANG" || return 0
       buildx_use "$GOLANG"
-      #buildx_pull
+      buildx_pull
+      COMMAND="buildx"
     ;;
     "destroy")
       buildx_destroy "$GOLANG" && exit 0 || exit 1
     ;;
     "buildx")
       buildx_use "$GOLANG"
-      #buildx_pull
+      buildx_pull
+    "usage")
+      usage $*
   esac
 
   for OSVENDOR in ${OSVENDORS[@]}; do
     for OSVERSION in ${OSVERSIONS[@]}; do
-      #pull "${OSVENDOR}:${OSVERSION}"
+      pull "${OSVENDOR}:${OSVERSION}"
       for GOVERSION in ${GOVERSIONS[@]}; do
         builder "$COMMAND"
       done
