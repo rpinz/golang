@@ -135,6 +135,13 @@ buildx_use() {
   docker buildx use "$1"
 }
 
+buildx_stop() {
+  if [ "$COMMAND" = "buildx" ]; then
+    echo " 🐳 Stopping buildx $1"
+    docker buildx stop "$1"
+  fi
+}
+
 buildx_pull() {
   if [ "$COMMAND" = "buildx" ]; then
     echo " 🐳 Pulling dockerfile:*"
@@ -178,6 +185,17 @@ builder() {
   esac
 }
 
+loop() {
+  for OSVENDOR in ${OSVENDORS[@]}; do
+    for OSVERSION in ${OSVERSIONS[@]}; do
+      pull "${OSVENDOR}:${OSVERSION}"
+      for GOVERSION in ${GOVERSIONS[@]}; do
+        builder "$COMMAND"
+      done
+    done
+  done
+}
+
 main() {
   COMMAND="$(get_command ${1:-usage})"
   NO_CACHE="$(get_nocache ${2:-})"
@@ -188,6 +206,8 @@ main() {
       buildx_use "$GOLANG"
       buildx_pull
       COMMAND="buildx"
+      loop $*
+      buildx_stop
     ;;
     "destroy")
       buildx_destroy "$GOLANG" && exit 0 || exit 1
@@ -195,19 +215,15 @@ main() {
     "buildx")
       buildx_use "$GOLANG"
       buildx_pull
+      loop $*
+      buildx_stop
+    ;;
+    "build"|"local")
+      loop $*
     ;;
     "usage")
       usage $*
   esac
-
-  for OSVENDOR in ${OSVENDORS[@]}; do
-    for OSVERSION in ${OSVERSIONS[@]}; do
-      pull "${OSVENDOR}:${OSVERSION}"
-      for GOVERSION in ${GOVERSIONS[@]}; do
-        builder "$COMMAND"
-      done
-    done
-  done
 }
 
 main $*
