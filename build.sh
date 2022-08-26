@@ -19,7 +19,7 @@ REGISTRIES=(
 
 # os vendor
 OSVENDORS=(
-  "ubuntu"
+  "docker.io/library/ubuntu"
 )
 
 # os versions
@@ -62,29 +62,32 @@ GOVERSION=""
 OSVENDOR=""
 OSVERSION=""
 REGISTRY=""
+COMMAND=""
+NO_CACHE=""
 
 # functions
 
 usage() {
-  echo " 🐳 ${0:-build.sh} < local | build | buildx > [ no-cache ]"
+  echo " 🐳 ${0:-build.sh} < create | destroy | local | build | buildx > [ no-cache ]"
   echo
+  echo "     create|destroy - create/destroy buildx builder"
   echo " local|build|buildx - (local) container(s)"
   echo "                    - (build) container(s) and push to registry"
   echo "                    - (buildx) multi-arch container(s) and push to registry"
   echo "           no-cache - build without cache"
 }
 
-builder_type() {
+get_command() {
   echo "${1:-local}"
 }
 
-nocache() {
+get_nocache() {
   if [ "${1:-}" = "no" ]; then
     echo "--no-cache"
   fi
 }
 
-args() {
+get_args() {
   DOCKER_ARGS=(
     --tag "$1"
     --build-arg "OSVENDOR=$OSVENDOR"
@@ -109,33 +112,48 @@ pull() {
     echo " 🐳 Pulling $1"
     docker pull "$1"
   else
-    echo " 🐳 Found images: $1"
+    echo " 🐳 Found image: $1"
   fi
 }
 
 build() {
-  args $*
+  get_args $*
   echo " 🐳 Building $1 for ${OSVENDOR^} ${OSVERSION^}"
   docker build $NO_CACHE ${DOCKER_ARGS[@]} .
 }
 
 buildx_create() {
-  if [ "$BUILDER_TYPE" = "buildx" ]; then
-    echo " 🐳 Creating buildx $1"
-    docker buildx create --name "$1" --driver-opt "network=host" --use --bootstrap
+  echo " 🐳 Creating buildx $1"
+  docker buildx create --name "$1" --driver-opt "network=host" --bootstrap
+}
+
+buildx_destroy() {
+  echo " 🐳 Removing buildx $1"
+  docker buildx rm "$1"
+}
+
+buildx_use() {
+  echo " 🐳 Using buildx $1"
+  docker buildx use "$1"
+}
+
+buildx_pull() {
+  if [ "$COMMAND" = "buildx" ]; then
+    echo " 🐳 Pulling dockerfile:*"
+    pull docker.io/docker/dockerfile:1
+    pull docker.io/docker/dockerfile:latest
+    pull docker.io/moby/buildkit:buildx-stable-1
   fi
 }
 
-buildx_rm() {
-  if [ "$BUILDER_TYPE" = "buildx" ]; then
-    echo " 🐳 Removing buildx $1"
-    docker buildx rm "$1"
-  fi
+buildx_prune() {
+  echo " 🐳 Pruning buildx $1"
+  docker buildx prune
 }
 
 buildx() {
-  args $*
-  if [ "$BUILDER_TYPE" = "buildx" ]; then
+  get_args $*
+  if [ "$COMMAND" = "buildx" ]; then
     echo " 🐳 Buildxing $1 for ${OSVENDOR^} ${OSVERSION^}"
     docker buildx build $NO_CACHE --platform "${OSPLATFORMS// }" ${DOCKER_ARGS[@]} --push .
   fi
@@ -143,20 +161,18 @@ buildx() {
 
 builder() {
   case "$1" in
-    "buildx")
+    "buildx"|"create")
       for REGISTRY in ${REGISTRIES[@]}; do
         buildx "${REGISTRY}/${GOLANG}:${GOVERSION}-${OSVERSION}"
       done
     ;;
     "build")
-      pull "${OSVENDOR}:${OSVERSION}"
       for REGISTRY in ${REGISTRIES[@]}; do
         build "${REGISTRY}/${GOLANG}:${GOVERSION}-${OSVERSION}" \
           && push "${REGISTRY}/${GOLANG}:${GOVERSION}-${OSVERSION}"
       done
     ;;
     "local")
-      pull "${OSVENDOR}:${OSVERSION}"
       build "${GOLANG}:${GOVERSION}-${OSVERSION}"
     ;;
     *)
@@ -165,20 +181,33 @@ builder() {
 }
 
 main() {
+  COMMAND="$(get_command ${1:-usage})"
+  NO_CACHE="$(get_nocache ${2:-})"
+
+  case "$COMMAND" in
+    "create")
+      buildx_create "$GOLANG" && exit 0 || exit 1
+      buildx_use "$GOLANG"
+      #buildx_pull
+    ;;
+    "destroy")
+      buildx_destroy "$GOLANG" && exit 0 || exit 1
+    ;;
+    "buildx")
+      buildx_use "$GOLANG"
+      #buildx_pull
+  esac
+
   for OSVENDOR in ${OSVENDORS[@]}; do
     for OSVERSION in ${OSVERSIONS[@]}; do
+      #pull "${OSVENDOR}:${OSVERSION}"
       for GOVERSION in ${GOVERSIONS[@]}; do
-        builder "$BUILDER_TYPE"
+        builder "$COMMAND"
       done
     done
   done
 }
 
-BUILDER_TYPE="$(builder_type ${1:-})"
-NO_CACHE="$(nocache ${2:-})"
-
-buildx_create "$GOLANG"
 main $*
-buildx_rm "$GOLANG"
 
 # EOF
