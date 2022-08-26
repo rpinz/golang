@@ -207,16 +207,17 @@ main() {
       buildx_pull
       COMMAND="buildx"
       loop $*
-      buildx_stop
+      buildx_stop "$GOLANG"
     ;;
     "destroy")
+      buildx_stop "$GOLANG"
       buildx_destroy "$GOLANG" && exit 0 || exit 1
     ;;
     "buildx")
       buildx_use "$GOLANG"
       buildx_pull
       loop $*
-      buildx_stop
+      buildx_stop "$GOLANG"
     ;;
     "build"|"local")
       loop $*
