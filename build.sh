@@ -13,8 +13,8 @@ set -o pipefail # don't hide errors within pipes
 # image registry
 REGISTRIES=(
   "docker.io/rpinz"           # docker
-  #"registry.gitlab.com/rpinz" # gitlab
-  #"ghcr.io/rpinz"             # github
+  "registry.gitlab.com/rpinz" # gitlab
+  "ghcr.io/rpinz"             # github
 )
 
 # os vendor
