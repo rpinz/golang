@@ -74,7 +74,7 @@ usage() {
   echo "          local - (local) container(s)"
   echo "          build - (build) container(s) and push to registry"
   echo "         buildx - (buildx) multi-arch container(s) and push to registry"
-  echo "           no-cache - build without cache"
+  echo "       no-cache - build without cache"
 }
 
 get_command() {
