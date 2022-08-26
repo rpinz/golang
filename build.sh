@@ -68,12 +68,12 @@ NO_CACHE=""
 # functions
 
 usage() {
-  echo " 🐳 ${0:-build.sh} < create | destroy | local | build | buildx > [ no-cache ]"
+  echo " 🐳 ${0:-build.sh} < create | destroy < local | build | buildx > > [ no-cache ]"
   echo
-  echo "     create|destroy - create/destroy buildx builder"
-  echo " local|build|buildx - (local) container(s)"
-  echo "                    - (build) container(s) and push to registry"
-  echo "                    - (buildx) multi-arch container(s) and push to registry"
+  echo " create|destroy - create/destroy buildx builder"
+  echo "          local - (local) container(s)"
+  echo "          build - (build) container(s) and push to registry"
+  echo "         buildx - (buildx) multi-arch container(s) and push to registry"
   echo "           no-cache - build without cache"
 }
 
@@ -116,7 +116,7 @@ pull() {
 
 build() {
   get_args $*
-  echo " 🐳 Building $1 for ${OSVENDOR^} ${OSVERSION^}"
+  echo " 🐳 Building $1 for $OSVENDOR $OSVERSION"
   docker build $NO_CACHE ${DOCKER_ARGS[@]} .
 }
 
@@ -152,7 +152,7 @@ buildx_prune() {
 buildx() {
   get_args $*
   if [ "$COMMAND" = "buildx" ]; then
-    echo " 🐳 Buildxing $1 for ${OSVENDOR^} ${OSVERSION^}"
+    echo " 🐳 Buildxing $1 for $OSVENDOR $OSVERSION"
     docker buildx build $NO_CACHE --platform "${OSPLATFORMS// }" ${DOCKER_ARGS[@]} --push .
   fi
 }
@@ -195,6 +195,7 @@ main() {
     "buildx")
       buildx_use "$GOLANG"
       buildx_pull
+    ;;
     "usage")
       usage $*
   esac
